@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopSpin Settings</title>
+    <style>
+        body {
+            width: 400px;
+            min-height: 500px;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        .toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .toggle label {
+            font-size: 14px;
+        }
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .switch.active {
+            background: #10b981;
+        }
+        .switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .switch.active::after {
+            transform: translateX(26px);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fef08a;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #fef08a;
+            color: #1f2937;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #fde047;
+            transform: translateY(-1px);
+        }
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .input-group {
+            margin-bottom: 12px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+            opacity: 0.9;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .win {
+            color: #10b981;
+        }
+        .loss {
+            color: #ef4444;
+        }
+    </style>
+  <script type="module" crossorigin src="/popup.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🎰 ShopSpin</div>
+            <div class="subtitle">Turn shopping into a game</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Settings</div>
+            
+            <div class="toggle">
+                <label>Extension Enabled</label>
+                <div class="switch" id="extension-toggle"></div>
+            </div>
+            
+            <div class="toggle">
+                <label>Sound Effects</label>
+                <div class="switch" id="sound-toggle"></div>
+            </div>
+            
+            <div class="toggle">
+                <label>Animations</label>
+                <div class="switch" id="animation-toggle"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Your Stats</div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="total-spins">0</div>
+                    <div class="stat-label">Total Spins</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="total-wins">0</div>
+                    <div class="stat-label">Wins</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="total-savings">$0</div>
+                    <div class="stat-label">Total Savings</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="win-rate">0%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Stripe Configuration</div>
+            <div class="input-group">
+                <label>Publishable Key</label>
+                <input type="text" id="stripe-publishable" placeholder="pk_test_...">
+            </div>
+            <div class="input-group">
+                <label>Secret Key</label>
+                <input type="password" id="stripe-secret" placeholder="sk_test_...">
+            </div>
+            <button class="btn" id="save-stripe">Save Stripe Config</button>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Recent Spins</div>
+            <div id="spin-history">
+                <div style="text-align: center; opacity: 0.7; font-size: 14px;">
+                    No spins yet. Find a product to get started!
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button class="btn secondary" id="clear-history">Clear History</button>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -15,7 +15,13 @@ export default defineConfig({
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]'
+        assetFileNames: (assetInfo) => {
+          // Put popup.html in root, everything else with original names
+          if (assetInfo.name === 'index.html' && assetInfo.source?.includes('ShopSpin Settings')) {
+            return 'popup.html';
+          }
+          return '[name].[ext]';
+        }
       }
     },
     copyPublicDir: true

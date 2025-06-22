@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp dist/src/popup/index.html dist/popup.html",
     "test": "jest --config jest.config.cjs",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write src",

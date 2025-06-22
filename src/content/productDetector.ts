@@ -15,13 +15,23 @@ export interface PageContext {
 
 export class ProductDetector {
   detectPageContext(): PageContext {
+    console.log('🎰 ShopSpin: detectPageContext starting...');
+    
     if (!this.isLikelyProductPage()) {
+      console.log('🎰 ShopSpin: Not a likely product page');
       return { pageType: 'unknown', products: [] };
     }
 
+    console.log('🎰 ShopSpin: Likely product page detected');
+    
     const pageType = this.determinePageType();
+    console.log('🎰 ShopSpin: Page type determined:', pageType);
+    
     const products = this.detectAllProducts();
+    console.log('🎰 ShopSpin: Products detected:', products.length);
+    
     const primaryProduct = this.selectPrimaryProduct(products, pageType);
+    console.log('🎰 ShopSpin: Primary product:', primaryProduct?.name || 'none');
 
     return {
       pageType,
@@ -50,7 +60,8 @@ export class ProductDetector {
     const multiProductIndicators = [
       '/search', '/s?', '/s/', '/browse/', '/category/', '/c/', '/shop/',
       'search=', 'category=', '/results', '/list', '/catalog', '/find',
-      'q=', 'query=', '_nkw=', '_sacat=', '_cat='
+      'q=', 'query=', '_nkw=', '_sacat=', '_cat=', '/bestsellers', '/gp/bestsellers',
+      '/best-sellers', '/top-rated', '/most-popular', '/trending'
     ];
 
     // FIRST: Check for explicit multi-product indicators
@@ -104,32 +115,85 @@ export class ProductDetector {
 
   private detectAllProducts(): ProductInfo[] {
     const products: ProductInfo[] = [];
+    console.debug('ShopSpin: Starting detectAllProducts...');
+    
+    const pageType = this.determinePageType();
 
-    // Try JSON-LD first (most reliable)
-    const jsonLdProduct = this.detectFromJsonLd();
-    if (jsonLdProduct && this.validateProduct(jsonLdProduct)) {
-      products.push(jsonLdProduct);
-    }
+    // STRATEGY 1: For single-product pages, prioritize single-product detection methods
+    if (pageType === 'single-product') {
+      console.debug('ShopSpin: Using single-product detection strategy...');
+      
+      // Try JSON-LD first (most reliable for single products)
+      const jsonLdProduct = this.detectFromJsonLd();
+      if (jsonLdProduct && this.validateProduct(jsonLdProduct)) {
+        console.debug('ShopSpin: Found JSON-LD product:', jsonLdProduct.name);
+        products.push(jsonLdProduct);
+        return products; // Return immediately for single products
+      }
 
-    // Try site-specific detection
-    const siteProducts = this.detectMultipleSiteSpecificProducts();
-    for (const product of siteProducts) {
-      if (this.validateProduct(product)) {
-        products.push(product);
+      // Try the original single product detection methods
+      const singleProduct = this.detectSingleProduct();
+      if (singleProduct) {
+        console.debug('ShopSpin: Single product found:', singleProduct.name);
+        products.push(singleProduct);
+        return products;
       }
     }
 
-    // If we have multiple products, return them
-    if (products.length > 0) {
-      return products;
+    // STRATEGY 2: For multi-product pages, use multi-product detection
+    else if (pageType === 'multi-product') {
+      console.debug('ShopSpin: Using multi-product detection strategy...');
+      
+      // Try JSON-LD first (might catch featured product)
+      const jsonLdProduct = this.detectFromJsonLd();
+      if (jsonLdProduct && this.validateProduct(jsonLdProduct)) {
+        console.debug('ShopSpin: Found JSON-LD product:', jsonLdProduct.name);
+        products.push(jsonLdProduct);
+      }
+
+      // Try site-specific multi-product detection
+      const siteProducts = this.detectMultipleSiteSpecificProducts();
+      console.debug('ShopSpin: Site-specific products found:', siteProducts.length);
+      for (const product of siteProducts) {
+        if (this.validateProduct(product)) {
+          products.push(product);
+          console.debug('ShopSpin: Valid site product added:', product.name);
+        } else {
+          console.debug('ShopSpin: Invalid site product skipped:', product.name);
+        }
+      }
     }
 
-    // Fallback to single product detection
-    const singleProduct = this.detectSingleProduct();
-    if (singleProduct) {
-      products.push(singleProduct);
+    // STRATEGY 3: For unknown pages, try both approaches
+    else {
+      console.debug('ShopSpin: Using fallback detection strategy...');
+      
+      // Try JSON-LD first
+      const jsonLdProduct = this.detectFromJsonLd();
+      if (jsonLdProduct && this.validateProduct(jsonLdProduct)) {
+        console.debug('ShopSpin: Found JSON-LD product:', jsonLdProduct.name);
+        products.push(jsonLdProduct);
+      }
+
+      // Try single product detection
+      const singleProduct = this.detectSingleProduct();
+      if (singleProduct && this.validateProduct(singleProduct)) {
+        console.debug('ShopSpin: Single product found:', singleProduct.name);
+        products.push(singleProduct);
+      }
+
+      // If still no products, try multi-product detection
+      if (products.length === 0) {
+        const siteProducts = this.detectMultipleSiteSpecificProducts();
+        for (const product of siteProducts) {
+          if (this.validateProduct(product)) {
+            products.push(product);
+          }
+        }
+      }
     }
 
+    console.debug('ShopSpin: Final product count:', products.length);
     return products;
   }
 
@@ -179,9 +243,11 @@ export class ProductDetector {
 
   private detectAmazonProducts(): ProductInfo[] {
     const products: ProductInfo[] = [];
+    console.log('🎰 ShopSpin: Detecting Amazon products...');
     
     // Search result items
     const searchResults = document.querySelectorAll('[data-component-type="s-search-result"]');
+    console.log('🎰 ShopSpin: Found search result containers:', searchResults.length);
     
     for (const result of searchResults) {
       const titleElement = result.querySelector('h2 a span, [data-cy="title-recipe-link"]');
@@ -203,6 +269,105 @@ export class ProductDetector {
       }
     }
     
+    // Best Sellers and other listing pages
+    if (products.length === 0) {
+      console.log('🎰 ShopSpin: No search results, trying best sellers/listing selectors...');
+      const listingItems = document.querySelectorAll([
+        '.p13n-sc-uncoverable-faceout',  // Best sellers items
+        '.a-carousel-card',              // Carousel items
+        '[data-testid="product-card"]',  // Product cards
+        '.s-result-item',                // Alternative search results
+        '.p13n-asin',                    // Best sellers ASINs
+        '[data-asin]'                    // Any element with ASIN
+      ].join(', '));
+      
+      console.log('🎰 ShopSpin: Found listing items:', listingItems.length);
+      
+      // Debug: Show what these elements actually are
+      if (listingItems.length > 0) {
+        console.log('🎰 ShopSpin: First item sample:', {
+          tagName: listingItems[0].tagName,
+          className: listingItems[0].className,
+          innerHTML: listingItems[0].innerHTML.slice(0, 200)
+        });
+      }
+      
+      for (const [index, item] of listingItems.entries()) {
+        if (index < 5) { // Only debug first 5 items to avoid spam
+          console.log('🎰 ShopSpin: Processing item', index, 'classes:', item.className);
+        }
+        
+        // Try multiple title selectors for different layouts
+        const titleSelectors = [
+          'h3 a span', 'h2 a span', 'h4 a span',
+          '.p13n-sc-truncate', 
+          '[data-testid="title"]',
+          '.a-link-normal span',
+          'a[href*="/dp/"]',
+          '.s-link-style span',
+          'h3', 'h2', 'h4', // Try direct headings
+          '.a-link-normal', // Try the link itself
+          'a' // Try any link
+        ];
+        
+        let titleElement = null;
+        let usedTitleSelector = '';
+        for (const selector of titleSelectors) {
+          titleElement = item.querySelector(selector);
+          if (titleElement?.textContent?.trim()) {
+            usedTitleSelector = selector;
+            break;
+          }
+        }
+        
+        // Try multiple price selectors
+        const priceSelectors = [
+          '.a-price .a-offscreen',
+          '.a-price-whole',
+          '.p13n-sc-price',
+          '[data-testid="price"]',
+          '.a-link-normal .a-price',
+          '.s-price',
+          '.a-price', // Try just price class
+          '[class*="price"]' // Try any element with price in class
+        ];
+        
+        let priceElement = null;
+        let usedPriceSelector = '';
+        for (const selector of priceSelectors) {
+          priceElement = item.querySelector(selector);
+          if (priceElement?.textContent?.includes('$')) {
+            usedPriceSelector = selector;
+            break;
+          }
+        }
+        
+        if (index < 5) { // Debug first 5 items
+          console.log('🎰 ShopSpin: Item', index, 'title found?', !!titleElement, 'selector:', usedTitleSelector);
+          console.log('🎰 ShopSpin: Item', index, 'price found?', !!priceElement, 'selector:', usedPriceSelector);
+          if (titleElement) console.log('🎰 ShopSpin: Item', index, 'title text:', titleElement.textContent?.slice(0, 50));
+          if (priceElement) console.log('🎰 ShopSpin: Item', index, 'price text:', priceElement.textContent?.slice(0, 20));
+        }
+        
+        if (titleElement?.textContent && priceElement?.textContent) {
+          const title = titleElement.textContent.trim();
+          const price = this.extractExactPrice(priceElement.textContent);
+          
+          if (price > 0 && title.length > 3) {
+            console.log('🎰 ShopSpin: Found listing product:', title, '$' + price);
+            products.push({
+              name: title,
+              price,
+              currency: 'USD',
+              url: window.location.href,
+              element: item as Element
+            });
+          }
+        }
+      }
+    }
+    
+    console.log('🎰 ShopSpin: Amazon products found:', products.length);
     return products;
   }
 

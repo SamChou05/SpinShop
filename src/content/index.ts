@@ -11,16 +11,24 @@ class ContentScript {
   }
 
   private async init() {
+    console.log('🎰 ShopSpin: ContentScript initializing...');
+    
     // Check if extension is enabled
     const settings = await chrome.storage.sync.get(['extensionEnabled']);
     this.isExtensionEnabled = settings.extensionEnabled !== false;
 
-    if (!this.isExtensionEnabled) return;
+    console.log('🎰 ShopSpin: Extension enabled?', this.isExtensionEnabled);
+
+    if (!this.isExtensionEnabled) {
+      console.log('🎰 ShopSpin: Extension disabled, exiting init');
+      return;
+    }
 
     // Listen for storage changes
     chrome.storage.onChanged.addListener((changes) => {
       if (changes.extensionEnabled) {
         this.isExtensionEnabled = changes.extensionEnabled.newValue;
+        console.log('🎰 ShopSpin: Extension enabled changed to:', this.isExtensionEnabled);
         if (!this.isExtensionEnabled) {
           this.removeAllIndicators();
           this.removeOverlay();
@@ -28,8 +36,9 @@ class ContentScript {
       }
     });
 
-    // Initial detection
-    this.detectAndNotify();
+    // Initial detection with delay to ensure page is loaded
+    console.log('🎰 ShopSpin: Starting initial detection...');
+    setTimeout(() => this.detectAndNotify(), 1000);
 
     // Listen for DOM changes and navigation
     this.setupObservers();
@@ -69,21 +78,37 @@ class ContentScript {
   }
 
   private detectAndNotify() {
-    if (!this.isExtensionEnabled) return;
+    console.log('🎰 ShopSpin: detectAndNotify called, extensionEnabled:', this.isExtensionEnabled);
+    
+    if (!this.isExtensionEnabled) {
+      console.log('🎰 ShopSpin: Extension disabled, returning');
+      return;
+    }
 
     try {
+      console.log('🎰 ShopSpin: Starting page context detection...');
       const context = this.detector.detectPageContext();
       
+      console.log('🎰 ShopSpin: Context detected:', {
+        pageType: context.pageType,
+        productCount: context.products.length,
+        primaryProduct: context.primaryProduct?.name,
+        url: window.location.href
+      });
+      
       if (this.hasContextChanged(context)) {
+        console.log('🎰 ShopSpin: Context changed, updating UI');
         this.currentContext = context;
         this.updateUI(context);
         
         if (context.primaryProduct) {
           this.notifyBackground(context.primaryProduct);
         }
+      } else {
+        console.log('🎰 ShopSpin: No context change detected');
       }
     } catch (error) {
-      console.error('ShopSpin detection error:', error);
+      console.error('🎰 ShopSpin detection error:', error);
       // Don't crash the entire script if detection fails
     }
   }
@@ -109,7 +134,7 @@ class ContentScript {
     this.removeAllIndicators();
     this.removeOverlay();
 
-    console.debug('ShopSpin updateUI:', {
+    console.log('🎰 ShopSpin updateUI:', {
       pageType: context.pageType,
       productCount: context.products.length,
       hasPrimaryProduct: !!context.primaryProduct
@@ -117,250 +142,122 @@ class ContentScript {
 
     // STRICT: Only show overlay on confirmed single-product pages
     if (context.pageType === 'single-product' && context.primaryProduct) {
-      console.debug('ShopSpin: Showing overlay for single product');
+      console.log('🎰 ShopSpin: Showing overlay for single product');
       this.showOverlay(context.primaryProduct);
     } 
-    // STRICT: Only show indicators on confirmed multi-product pages
+    // STRICT: Only show subtle floating promotion on multi-product pages (NO individual indicators)
     else if (context.pageType === 'multi-product' && context.products.length > 0) {
-      console.debug('ShopSpin: Showing indicators for', context.products.length, 'products');
-      this.showProductIndicators(context.products);
+      console.log('🎰 ShopSpin: Showing subtle promotion for multi-product page');
+      // Only show the floating promotion, no individual product indicators
+      setTimeout(() => this.showFloatingPromotion(context.products), 2000);
     }
     // STRICT: Show nothing on unknown page types
     else {
-      console.debug('ShopSpin: No UI shown - page type unknown or no products');
+      console.log('🎰 ShopSpin: No UI shown - page type unknown or no products');
     }
   }
 
-  private showProductIndicators(products: ProductInfo[]) {
-    // Limit to first 10 products to avoid overwhelming the page
-    const limitedProducts = products.slice(0, 10);
-    
-    for (const product of limitedProducts) {
-      if (product.element) {
-        this.addProductIndicator(product);
-      }
-    }
-  }
+  private showFloatingPromotion(products: ProductInfo[]) {
+    // Don't show if already exists
+    if (document.getElementById('shopspin-floating-promo')) return;
 
-  private addProductIndicator(product: ProductInfo) {
-    if (!product.element) return;
+    const avgPrice = products.reduce((sum, p) => sum + p.price, 0) / products.length;
+    const potentialSavings = Math.min(avgPrice * 0.4, 30);
 
-    try {
-      // Create a subtle, encouraging indicator
-      const indicator = document.createElement('div');
-      indicator.className = 'shopspin-indicator';
-      indicator.style.cssText = `
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 32px;
-        height: 20px;
-        background: rgba(102, 126, 234, 0.9);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        color: white;
-        cursor: pointer;
-        z-index: 10000;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-        opacity: 0.85;
-        font-weight: bold;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      `;
-      
-      // Create pulsing effect to draw attention subtly
-      indicator.innerHTML = '🎲 SPIN';
-      indicator.title = `Click to view this item and try ShopSpin! $${product.price.toFixed(2)}`;
-
-      // Enhanced hover effects that encourage clicking through
-      indicator.addEventListener('mouseenter', () => {
-        indicator.style.transform = 'scale(1.05)';
-        indicator.style.opacity = '1';
-        indicator.style.background = 'rgba(102, 126, 234, 1)';
-        indicator.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-        
-        // Show encouraging tooltip
-        this.showEncouragingTooltip(indicator, product);
-      });
-
-      indicator.addEventListener('mouseleave', () => {
-        indicator.style.transform = 'scale(1)';
-        indicator.style.opacity = '0.85';
-        indicator.style.background = 'rgba(102, 126, 234, 0.9)';
-        indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-        
-        this.hideEncouragingTooltip();
-      });
-
-      // Instead of showing popup, encourage clicking through to product page
-      indicator.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Find the product link and encourage user to click it
-        if (product.element) {
-          const productLink = this.findProductLink(product.element);
-          if (productLink) {
-            // Add visual feedback
-            indicator.style.background = '#10b981';
-            indicator.innerHTML = '✨ GO!';
-            
-            // Highlight the product link briefly
-            this.highlightProductLink(productLink);
-            
-            // Show encouraging message
-            this.showClickThroughMessage(indicator, productLink);
-            
-            setTimeout(() => {
-              indicator.style.background = 'rgba(102, 126, 234, 0.9)';
-              indicator.innerHTML = '🎲 SPIN';
-            }, 2000);
-          }
-        }
-      });
-
-      // Position relative to product element
-      try {
-        const productStyle = window.getComputedStyle(product.element);
-        
-        if (productStyle.position === 'static' && product.element instanceof HTMLElement) {
-          product.element.style.position = 'relative';
-        }
-
-        product.element.appendChild(indicator);
-        this.indicatorElements.set(product.element, indicator);
-      } catch (styleError) {
-        console.debug('ShopSpin styling error:', styleError);
-        indicator.style.position = 'fixed';
-        indicator.style.top = '10px';
-        indicator.style.right = '10px';
-        document.body.appendChild(indicator);
-        this.indicatorElements.set(product.element, indicator);
-      }
-    } catch (error) {
-      console.error('ShopSpin indicator creation error:', error);
-    }
-  }
-
-  private findProductLink(productElement: Element): HTMLAnchorElement | null {
-    // Look for links within the product element
-    const links = productElement.querySelectorAll('a[href]');
-    
-    for (const link of links) {
-      const href = link.getAttribute('href');
-      if (href && (
-        href.includes('/dp/') || 
-        href.includes('/item/') || 
-        href.includes('/product/') || 
-        href.includes('/p/') ||
-        href.includes('/pd/')
-      )) {
-        return link as HTMLAnchorElement;
-      }
-    }
-    
-    // Fallback: find any link with product-related content
-    return productElement.querySelector('a[href*="product"], a[href*="item"], a h1, a h2, a h3') as HTMLAnchorElement;
-  }
-
-  private highlightProductLink(link: HTMLAnchorElement) {
-    const originalStyle = link.style.cssText;
-    
-    link.style.cssText += `
-      outline: 2px solid #667eea !important;
-      outline-offset: 2px !important;
-      transition: all 0.3s ease !important;
-    `;
-    
-    setTimeout(() => {
-      link.style.cssText = originalStyle;
-    }, 2000);
-  }
-
-  private showEncouragingTooltip(indicator: HTMLElement, product: ProductInfo) {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'shopspin-tooltip';
-    tooltip.style.cssText = `
-      position: absolute;
-      bottom: 25px;
-      right: 0;
-      background: rgba(0, 0, 0, 0.9);
+    const floatingPromo = document.createElement('div');
+    floatingPromo.id = 'shopspin-floating-promo';
+    floatingPromo.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 280px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      white-space: nowrap;
-      z-index: 10001;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      z-index: 999998;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transform: translateY(100px);
       opacity: 0;
-      transform: translateY(5px);
-      transition: all 0.2s ease;
+      transition: all 0.5s ease;
+      border: 2px solid rgba(255,255,255,0.2);
     `;
-    
-    const savings = (product.price * 0.1).toFixed(2); // Example potential savings
-    tooltip.textContent = `Click to view item & save up to $${savings}!`;
-    
-    indicator.appendChild(tooltip);
-    
+
+    floatingPromo.innerHTML = `
+      <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <div style="font-size: 24px; margin-right: 8px;">🎰</div>
+        <div>
+          <div style="font-weight: bold; font-size: 14px;">ShopSpin Extension</div>
+          <div style="font-size: 11px; opacity: 0.9;">Win items at fraction of cost!</div>
+        </div>
+        <button id="shopspin-promo-close" style="margin-left: auto; background: none; border: none; color: white; font-size: 18px; cursor: pointer; opacity: 0.7; width: 24px; height: 24px;">×</button>
+      </div>
+      <div style="font-size: 12px; margin-bottom: 8px; opacity: 0.95;">
+        💰 Save up to $${potentialSavings.toFixed(0)} on these items
+      </div>
+      <div style="text-align: center; background: rgba(255,255,255,0.2); padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold;">
+        👆 Click any product to start spinning!
+      </div>
+    `;
+
+    document.body.appendChild(floatingPromo);
+
+    // Animate in
     setTimeout(() => {
-      tooltip.style.opacity = '1';
-      tooltip.style.transform = 'translateY(0)';
+      floatingPromo.style.transform = 'translateY(0)';
+      floatingPromo.style.opacity = '1';
     }, 100);
-  }
 
-  private hideEncouragingTooltip() {
-    const tooltip = document.querySelector('.shopspin-tooltip');
-    if (tooltip) {
-      tooltip.remove();
-    }
-  }
+    // Close button handler
+    const closeBtn = floatingPromo.querySelector('#shopspin-promo-close');
+    closeBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hideFloatingPromotion();
+    });
 
-  private showClickThroughMessage(indicator: HTMLElement, link: HTMLAnchorElement) {
-    const message = document.createElement('div');
-    message.style.cssText = `
-      position: absolute;
-      top: -35px;
-      right: 0;
-      background: #10b981;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      white-space: nowrap;
-      z-index: 10001;
-      font-weight: bold;
-    `;
-    
-    message.textContent = '👆 Click the product to start spinning!';
-    indicator.appendChild(message);
-    
-    // Add a subtle animation to the product link
-    let pulseCount = 0;
-    const pulseInterval = setInterval(() => {
-      if (pulseCount < 3) {
-        link.style.transform = 'scale(1.02)';
-        setTimeout(() => {
-          link.style.transform = 'scale(1)';
-        }, 200);
-        pulseCount++;
-      } else {
-        clearInterval(pulseInterval);
+    // Click handler - scroll to first product
+    floatingPromo.addEventListener('click', () => {
+      if (products[0]?.element) {
+        products[0].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Just hide the promotion, no need to highlight indicators since they don't exist
+        this.hideFloatingPromotion();
       }
-    }, 400);
-    
+    });
+
+    // Auto-hide after 8 seconds
     setTimeout(() => {
-      message.remove();
-    }, 3000);
+      this.hideFloatingPromotion();
+    }, 8000);
+  }
+
+  private hideFloatingPromotion() {
+    const promo = document.getElementById('shopspin-floating-promo');
+    if (promo) {
+      promo.style.transform = 'translateY(100px)';
+      promo.style.opacity = '0';
+      setTimeout(() => promo.remove(), 500);
+    }
   }
 
   private removeAllIndicators() {
-    for (const [, indicator] of this.indicatorElements) {
-      if (indicator.parentNode) {
-        indicator.parentNode.removeChild(indicator);
-      }
-    }
+    // Remove all ShopSpin UI elements
+    const selectors = [
+      '.shopspin-indicator',
+      '.shopspin-value-tooltip',
+      '.shopspin-urgent-cta',
+      '#shopspin-floating-promo',
+      '#shopspin-overlay'
+    ];
+    
+    selectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => element.remove());
+    });
+    
+    // Clean up stored indicator references
     this.indicatorElements.clear();
   }
 
@@ -372,27 +269,6 @@ class ContentScript {
   }
 
   private showOverlay(product: ProductInfo) {
-    // SAFETY CHECK: Never show overlay if we detect this might be a multi-product page
-    const url = window.location.href.toLowerCase();
-    const multiProductIndicators = [
-      '/search', '/s?', '/s/', 'search=', 'q=', 'query=', '_nkw=', '/results', '/list'
-    ];
-    
-    if (multiProductIndicators.some(indicator => url.includes(indicator))) {
-      console.warn('ShopSpin: Blocked overlay on potential multi-product page:', url);
-      return;
-    }
-
-    // Additional DOM check for multiple products
-    const productContainers = document.querySelectorAll(
-      '[data-component-type="s-search-result"], .s-result-item, .s-item, [class*="search-result"]'
-    );
-    
-    if (productContainers.length > 2) {
-      console.warn('ShopSpin: Blocked overlay - detected', productContainers.length, 'product containers');
-      return;
-    }
-
     console.debug('ShopSpin: Showing overlay for product:', product.name);
 
     // Remove existing overlay

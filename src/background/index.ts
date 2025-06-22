@@ -25,6 +25,10 @@ class BackgroundService {
             .then(sendResponse);
           return true; // Keep channel open for async response
         
+        case 'INDICATOR_CLICKED':
+          this.handleIndicatorClick(message.product);
+          break;
+        
         default:
           break;
       }
@@ -45,6 +49,30 @@ class BackgroundService {
   private handleProductFound(product: ProductInfo) {
     console.log('Product detected:', product);
     // Could store analytics or validate product here
+  }
+
+  private async handleIndicatorClick(product: ProductInfo) {
+    // Track indicator clicks for analytics and optimization
+    const analytics = await chrome.storage.local.get(['indicatorClicks']);
+    const currentClicks = analytics.indicatorClicks || [];
+    
+    currentClicks.push({
+      timestamp: Date.now(),
+      product: {
+        name: product.name,
+        price: product.price,
+        url: product.url
+      },
+      domain: new URL(product.url).hostname
+    });
+
+    // Keep only last 500 clicks
+    if (currentClicks.length > 500) {
+      currentClicks.splice(0, currentClicks.length - 500);
+    }
+
+    await chrome.storage.local.set({ indicatorClicks: currentClicks });
+    console.log('Indicator clicked for product:', product.name);
   }
 
   private async handleSpinRequest(product: ProductInfo, stake: number): Promise<SpinResult> {
