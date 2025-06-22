@@ -4,19 +4,136 @@ export interface ProductInfo {
   currency: string;
   image?: string;
   url: string;
+  element?: Element; // Reference to the product element on page
+}
+
+export interface PageContext {
+  pageType: 'single-product' | 'multi-product' | 'unknown';
+  products: ProductInfo[];
+  primaryProduct?: ProductInfo;
 }
 
 export class ProductDetector {
-  detectProduct(): ProductInfo | null {
-    // First check if this looks like a product page
+  detectPageContext(): PageContext {
     if (!this.isLikelyProductPage()) {
-      return null;
+      return { pageType: 'unknown', products: [] };
     }
 
-    // Try JSON-LD structured data first
-    const jsonLdProduct = this.detectFromJsonLd();
-    if (jsonLdProduct && this.validateProduct(jsonLdProduct)) return jsonLdProduct;
+    const pageType = this.determinePageType();
+    const products = this.detectAllProducts();
+    const primaryProduct = this.selectPrimaryProduct(products, pageType);
 
+    return {
+      pageType,
+      products,
+      primaryProduct
+    };
+  }
+
+  // Legacy method for backward compatibility
+  detectProduct(): ProductInfo | null {
+    const context = this.detectPageContext();
+    return context.primaryProduct || null;
+  }
+
+  private determinePageType(): 'single-product' | 'multi-product' | 'unknown' {
+    const url = window.location.href.toLowerCase();
+    const pathname = window.location.pathname.toLowerCase();
+
+    // Single product page indicators (very specific)
+    const singleProductIndicators = [
+      '/dp/', '/gp/product/', '/item/', '/p/', '/pd/', '/product/',
+      'product-detail', 'item-detail', '/products/', '/buy/'
+    ];
+
+    // Multi-product page indicators (search, category, listing pages)
+    const multiProductIndicators = [
+      '/search', '/s?', '/s/', '/browse/', '/category/', '/c/', '/shop/',
+      'search=', 'category=', '/results', '/list', '/catalog', '/find',
+      'q=', 'query=', '_nkw=', '_sacat=', '_cat='
+    ];
+
+    // FIRST: Check for explicit multi-product indicators
+    if (multiProductIndicators.some(indicator => 
+        url.includes(indicator) || pathname.includes(indicator))) {
+      console.debug('ShopSpin: Multi-product page detected via URL:', url);
+      return 'multi-product';
+    }
+
+    // SECOND: Check for explicit single-product indicators
+    if (singleProductIndicators.some(indicator => 
+        url.includes(indicator) || pathname.includes(indicator))) {
+      console.debug('ShopSpin: Single-product page detected via URL:', url);
+      return 'single-product';
+    }
+
+    // THIRD: Check DOM for multiple product containers
+    const productContainers = document.querySelectorAll(
+      '[data-component-type="s-search-result"], .s-result-item, .product-item, .item-container, [class*="product-card"], .s-item, [class*="search-result"]'
+    );
+
+    if (productContainers.length > 2) {
+      console.debug('ShopSpin: Multi-product page detected via DOM:', productContainers.length, 'containers');
+      return 'multi-product';
+    }
+
+    // FOURTH: Look for single product page indicators in DOM
+    const singleProductElements = document.querySelectorAll(
+      '#productTitle, [data-testid="title"], .product-title, .product__title, .x-item-title-label'
+    );
+
+    if (singleProductElements.length > 0) {
+      console.debug('ShopSpin: Single-product page detected via DOM elements');
+      return 'single-product';
+    }
+
+    // FIFTH: Check page structure for lists vs single items
+    const listIndicators = document.querySelectorAll(
+      'ul[class*="search"], ol[class*="search"], [class*="search-results"], [class*="product-list"], [class*="items-list"]'
+    );
+
+    if (listIndicators.length > 0) {
+      console.debug('ShopSpin: Multi-product page detected via list structure');
+      return 'multi-product';
+    }
+
+    // DEFAULT: If unclear, be conservative and return unknown
+    console.debug('ShopSpin: Page type unknown, URL:', url);
+    return 'unknown';
+  }
+
+  private detectAllProducts(): ProductInfo[] {
+    const products: ProductInfo[] = [];
+
+    // Try JSON-LD first (most reliable)
+    const jsonLdProduct = this.detectFromJsonLd();
+    if (jsonLdProduct && this.validateProduct(jsonLdProduct)) {
+      products.push(jsonLdProduct);
+    }
+
+    // Try site-specific detection
+    const siteProducts = this.detectMultipleSiteSpecificProducts();
+    for (const product of siteProducts) {
+      if (this.validateProduct(product)) {
+        products.push(product);
+      }
+    }
+
+    // If we have multiple products, return them
+    if (products.length > 0) {
+      return products;
+    }
+
+    // Fallback to single product detection
+    const singleProduct = this.detectSingleProduct();
+    if (singleProduct) {
+      products.push(singleProduct);
+    }
+
+    return products;
+  }
+
+  private detectSingleProduct(): ProductInfo | null {
     // Try site-specific selectors
     const siteSpecificProduct = this.detectFromSiteSpecificSelectors();
     if (siteSpecificProduct && this.validateProduct(siteSpecificProduct)) return siteSpecificProduct;
@@ -30,6 +147,166 @@ export class ProductDetector {
     if (scrapedProduct && this.validateProduct(scrapedProduct)) return scrapedProduct;
 
     return null;
+  }
+
+  private selectPrimaryProduct(products: ProductInfo[], pageType: string): ProductInfo | undefined {
+    if (products.length === 0) return undefined;
+    if (products.length === 1) return products[0];
+
+    // For single-product pages, prefer the first valid product
+    if (pageType === 'single-product') {
+      return products[0];
+    }
+
+    // For multi-product pages, we might want to let the user choose
+    // For now, return the first one but we'll handle this in the UI layer
+    return products[0];
+  }
+
+  private detectMultipleSiteSpecificProducts(): ProductInfo[] {
+    const hostname = window.location.hostname.toLowerCase();
+    
+    if (hostname.includes('amazon.')) {
+      return this.detectAmazonProducts();
+    }
+    
+    if (hostname.includes('ebay.')) {
+      return this.detectEbayProducts();
+    }
+    
+    return this.detectGenericProducts();
+  }
+
+  private detectAmazonProducts(): ProductInfo[] {
+    const products: ProductInfo[] = [];
+    
+    // Search result items
+    const searchResults = document.querySelectorAll('[data-component-type="s-search-result"]');
+    
+    for (const result of searchResults) {
+      const titleElement = result.querySelector('h2 a span, [data-cy="title-recipe-link"]');
+      const priceElement = result.querySelector('.a-price-whole, .a-price .a-offscreen');
+      
+      if (titleElement?.textContent && priceElement?.textContent) {
+        const title = titleElement.textContent.trim();
+        const price = this.extractExactPrice(priceElement.textContent);
+        
+        if (price > 0) {
+          products.push({
+            name: title,
+            price,
+            currency: 'USD',
+            url: window.location.href,
+            element: result as Element
+          });
+        }
+      }
+    }
+    
+    return products;
+  }
+
+  private detectEbayProducts(): ProductInfo[] {
+    const products: ProductInfo[] = [];
+    
+    try {
+      // Search result items - try multiple selectors
+      const searchResults = document.querySelectorAll('.s-item:not(.s-item--ad), .srp-results .s-item, [data-viewport]');
+      
+      for (const result of searchResults) {
+        try {
+          // Try multiple title selectors
+          const titleSelectors = [
+            '.s-item__title', 
+            '.s-item__title-text', 
+            'h3.s-item__title',
+            '.it-ttl',
+            '[data-testid="item-title"]'
+          ];
+          
+          let titleElement = null;
+          for (const selector of titleSelectors) {
+            titleElement = result.querySelector(selector);
+            if (titleElement?.textContent?.trim()) break;
+          }
+          
+          // Try multiple price selectors
+          const priceSelectors = [
+            '.s-item__price .notranslate',
+            '.s-item__price',
+            '.it-prc',
+            '[data-testid="item-price"]',
+            '.u-flL .bold'
+          ];
+          
+          let priceElement = null;
+          for (const selector of priceSelectors) {
+            priceElement = result.querySelector(selector);
+            if (priceElement?.textContent?.includes('$')) break;
+          }
+          
+          if (titleElement?.textContent && priceElement?.textContent) {
+            const title = titleElement.textContent.trim();
+            
+            // Clean title - remove "New Listing" and other prefixes
+            const cleanTitle = title.replace(/^(New Listing|SPONSORED)\s*/i, '').trim();
+            
+            if (cleanTitle.length < 3) continue;
+            
+            const price = this.extractExactPrice(priceElement.textContent);
+            
+            if (price > 0 && price < 50000) {
+              products.push({
+                name: cleanTitle,
+                price,
+                currency: 'USD',
+                url: window.location.href,
+                element: result as Element
+              });
+            }
+          }
+        } catch (error) {
+          // Skip this item if there's an error parsing it
+          console.debug('eBay product parsing error:', error);
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error('eBay products detection error:', error);
+    }
+    
+    return products;
+  }
+
+  private detectGenericProducts(): ProductInfo[] {
+    const products: ProductInfo[] = [];
+    
+    // Look for common product container patterns
+    const productContainers = document.querySelectorAll(
+      '.product-item, .product-card, .item-container, [class*="product-"], [data-testid*="product"]'
+    );
+    
+    for (const container of productContainers) {
+      const titleElement = container.querySelector('h1, h2, h3, .title, .name, [class*="title"], [class*="name"]');
+      const priceElement = container.querySelector('[class*="price"], .cost, .amount, [data-testid*="price"]');
+      
+      if (titleElement?.textContent && priceElement?.textContent) {
+        const title = titleElement.textContent.trim();
+        const price = this.extractExactPrice(priceElement.textContent);
+        
+        if (price > 0 && title.length >= 3) {
+          products.push({
+            name: title,
+            price,
+            currency: 'USD',
+            url: window.location.href,
+            element: container as Element
+          });
+        }
+      }
+    }
+    
+    return products;
   }
 
   private isLikelyProductPage(): boolean {
@@ -118,21 +395,73 @@ export class ProductDetector {
   private detectAmazonProduct(): ProductInfo | null {
     const title = document.querySelector('#productTitle, [data-testid="title"]')?.textContent?.trim();
     
+    // More comprehensive price extraction with exact cents
     const priceSelectors = [
-      '.a-price-whole',
+      // Full price with cents
       '.a-price .a-offscreen',
+      '.a-price-whole + .a-price-fraction',
+      
+      // Structured price elements
+      {
+        whole: '.a-price-whole',
+        fraction: '.a-price-fraction'
+      },
+      
+      // Alternative selectors
       '[data-testid="price-whole"]',
+      '#price_inside_buybox .a-offscreen',
+      '.a-price-range .a-offscreen',
+      
+      // Fallback selectors
       '.a-price-symbol + .a-price-whole',
       '#price_inside_buybox'
     ];
     
     let price = 0;
+    let bestScore = 0;
+    
     for (const selector of priceSelectors) {
-      const priceElement = document.querySelector(selector);
-      if (priceElement) {
-        const priceText = priceElement.textContent?.replace(/[^0-9.,]/g, '') || '';
-        price = parseFloat(priceText.replace(/,/g, ''));
-        if (price > 0) break;
+      if (typeof selector === 'object' && selector.whole) {
+        // Handle structured price (whole + fraction)
+        const wholeElement = document.querySelector(selector.whole);
+        const fractionElement = document.querySelector(selector.fraction);
+        
+        if (wholeElement?.textContent) {
+          const wholePart = wholeElement.textContent.replace(/[^0-9]/g, '');
+          const fractionPart = fractionElement?.textContent?.replace(/[^0-9]/g, '') || '00';
+          
+          if (wholePart) {
+            const candidatePrice = parseFloat(`${wholePart}.${fractionPart.padEnd(2, '0').substring(0, 2)}`);
+            
+            if (candidatePrice > 0) {
+              const visualScore = this.calculateVisualPriorityScore(wholeElement);
+              
+              if (visualScore > bestScore || (price === 0 && candidatePrice > 0)) {
+                price = candidatePrice;
+                bestScore = visualScore;
+              }
+            }
+          }
+        }
+      } else {
+        // Handle single element selectors - check all matches, not just first
+        const priceElements = document.querySelectorAll(selector as string);
+        
+        for (const priceElement of priceElements) {
+          if (priceElement?.textContent) {
+            // Enhanced price extraction for exact cents
+            const candidatePrice = this.extractExactPrice(priceElement.textContent);
+            
+            if (candidatePrice > 0) {
+              const visualScore = this.calculateVisualPriorityScore(priceElement);
+              
+              if (visualScore > bestScore || (price === 0 && candidatePrice > 0)) {
+                price = candidatePrice;
+                bestScore = visualScore;
+              }
+            }
+          }
+        }
       }
     }
     
@@ -152,29 +481,85 @@ export class ProductDetector {
   }
 
   private detectEbayProduct(): ProductInfo | null {
-    const title = document.querySelector('[data-testid="x-item-title-label"], .x-item-title-label')?.textContent?.trim();
+    // Multiple title selectors for eBay product pages
+    const titleSelectors = [
+      '[data-testid="x-item-title-label"]',
+      '.x-item-title-label',
+      '#x-item-title-text',
+      '.it-ttl',
+      'h1[itemprop="name"]'
+    ];
     
+    let title = '';
+    for (const selector of titleSelectors) {
+      const element = document.querySelector(selector);
+      if (element?.textContent?.trim()) {
+        title = element.textContent.trim();
+        break;
+      }
+    }
+    
+    // Comprehensive price selectors for exact pricing
     const priceSelectors = [
+      // Current price selectors
       '[data-testid="notmi-price"] .notranslate',
       '.u-flL .bold',
-      '.notranslate[role="text"]'
+      '.notranslate[role="text"]',
+      
+      // Alternative price selectors
+      '#prcIsum',
+      '.u-flL.condText',
+      '[itemprop="price"]',
+      '.ux-textspans--BOLD',
+      
+      // Structured price detection
+      '.ux-textspans[content]'
     ];
     
     let price = 0;
+    let bestScore = 0;
+    
     for (const selector of priceSelectors) {
-      const priceElement = document.querySelector(selector);
-      if (priceElement) {
-        const priceText = priceElement.textContent?.replace(/[^0-9.,]/g, '') || '';
-        price = parseFloat(priceText.replace(/,/g, ''));
-        if (price > 0) break;
+      const priceElements = document.querySelectorAll(selector);
+      
+      for (const priceElement of priceElements) {
+        if (priceElement?.textContent) {
+          let candidatePrice = 0;
+          
+          // First try to get exact price from content attribute
+          const contentPrice = priceElement.getAttribute('content');
+          if (contentPrice) {
+            const parsedContent = parseFloat(contentPrice);
+            if (parsedContent > 0) {
+              candidatePrice = parsedContent;
+            }
+          }
+          
+          // Otherwise parse from text content with exact extraction
+          if (candidatePrice === 0) {
+            candidatePrice = this.extractExactPrice(priceElement.textContent);
+          }
+          
+          if (candidatePrice > 0) {
+            const visualScore = this.calculateVisualPriorityScore(priceElement);
+            
+            if (visualScore > bestScore || (price === 0 && candidatePrice > 0)) {
+              price = candidatePrice;
+              bestScore = visualScore;
+            }
+          }
+        }
       }
     }
+    
+    const image = document.querySelector('#icImg, .ux-image-carousel img')?.getAttribute('src');
     
     if (title && price > 0) {
       return {
         name: title,
         price,
         currency: 'USD',
+        image: image || undefined,
         url: window.location.href
       };
     }
@@ -195,8 +580,7 @@ export class ProductDetector {
     for (const selector of priceSelectors) {
       const priceElement = document.querySelector(selector);
       if (priceElement && !priceElement.classList.contains('compare-price')) {
-        const priceText = priceElement.textContent?.replace(/[^0-9.,]/g, '') || '';
-        price = parseFloat(priceText.replace(/,/g, ''));
+        price = this.extractExactPrice(priceElement.textContent || '');
         if (price > 0) break;
       }
     }
@@ -250,8 +634,7 @@ export class ProductDetector {
           continue;
         }
         
-        const priceText = element.textContent.replace(/[^0-9.,]/g, '');
-        const parsedPrice = parseFloat(priceText.replace(/,/g, ''));
+        const parsedPrice = this.extractExactPrice(element.textContent);
         
         if (parsedPrice > 0 && parsedPrice < 50000) {
           price = parsedPrice;
@@ -347,53 +730,92 @@ export class ProductDetector {
   }
 
   private detectFromTextScraping(): ProductInfo | null {
-    // Enhanced price patterns including different currencies
+    // Enhanced price patterns for exact cent detection
     const pricePatterns = [
-      /\$\s*([0-9,]+(?:\.[0-9]{2})?)/g,           // $123.45
-      /USD\s*([0-9,]+(?:\.[0-9]{2})?)/g,          // USD 123.45
-      /([0-9,]+(?:\.[0-9]{2})?)\s*USD/g,          // 123.45 USD
-      /Price:\s*\$([0-9,]+(?:\.[0-9]{2})?)/gi,    // Price: $123.45
-      /Cost:\s*\$([0-9,]+(?:\.[0-9]{2})?)/gi      // Cost: $123.45
+      /\$\s*([0-9,]+\.[0-9]{2})/g,               // $123.45 (exact cents)
+      /\$\s*([0-9,]+)/g,                         // $123 (whole dollars)
+      /USD\s*([0-9,]+(?:\.[0-9]{2})?)/g,         // USD 123.45
+      /([0-9,]+(?:\.[0-9]{2})?)\s*USD/g,         // 123.45 USD
+      /Price:\s*\$([0-9,]+(?:\.[0-9]{2})?)/gi,   // Price: $123.45
+      /Cost:\s*\$([0-9,]+(?:\.[0-9]{2})?)/gi,    // Cost: $123.45
+      /\$([0-9,]+(?:\.[0-9]{2})?)\s*(?:each|ea)/gi // $123.45 each
     ];
 
     let bestPrice = 0;
     let bestPriceElement: Element | null = null;
+    let bestScore = 0;
 
-    // Find the most likely price element
-    for (const pattern of pricePatterns) {
-      const priceElements = document.querySelectorAll('*');
+    // Target price-specific elements first for better accuracy
+    const priceSpecificSelectors = [
+      '[class*="price"]:not([class*="compare"]):not([class*="original"])',
+      '[data-testid*="price"]',
+      '[itemprop="price"]',
+      '.cost', '.amount', '.value', '.money',
+      '[id*="price"]'
+    ];
+
+    // First pass: check price-specific elements with visual prioritization
+    for (const selector of priceSpecificSelectors) {
+      const elements = document.querySelectorAll(selector);
       
-      for (const element of priceElements) {
+      for (const element of elements) {
         if (!element.textContent) continue;
         
-        // Skip navigation, footer, and sidebar elements
+        // Use enhanced price extraction
+        const priceValue = this.extractExactPrice(element.textContent);
+        
+        if (priceValue > 0.01 && priceValue < 50000) {
+          const baseScore = this.calculatePriceElementScore(element);
+          const visualScore = this.calculateVisualPriorityScore(element);
+          const totalScore = baseScore + visualScore;
+          
+          if (totalScore > bestScore || (totalScore > 0 && priceValue > bestPrice)) {
+            bestPrice = priceValue;
+            bestPriceElement = element;
+            bestScore = totalScore;
+          }
+        }
+      }
+    }
+
+    // Second pass: broader search if no price found
+    if (bestPrice === 0) {
+      const allElements = document.querySelectorAll('*:not(nav):not(footer):not(script):not(style)');
+      
+      for (const element of allElements) {
+        if (!element.textContent) continue;
+        
         const tagName = element.tagName.toLowerCase();
         const className = element.className.toLowerCase();
         
+        // Skip non-content elements
         if (tagName === 'nav' || tagName === 'footer' || 
             className.includes('nav') || className.includes('footer') ||
-            className.includes('sidebar') || className.includes('menu')) {
+            className.includes('sidebar') || className.includes('menu') ||
+            className.includes('breadcrumb')) {
           continue;
         }
 
-        const matches = Array.from(element.textContent.matchAll(pattern));
-        
-        for (const match of matches) {
-          const priceValue = parseFloat(match[1].replace(/,/g, ''));
+        for (const pattern of pricePatterns) {
+          const matches = Array.from(element.textContent.matchAll(pattern));
           
-          if (priceValue > 0.01 && priceValue < 50000) {
-            // Prioritize elements with price-related classes/ids
-            const score = this.calculatePriceElementScore(element);
+          for (const match of matches) {
+            const priceValue = this.extractExactPrice(match[1]);
             
-            if (score > 0 && priceValue > bestPrice) {
-              bestPrice = priceValue;
-              bestPriceElement = element;
+            if (priceValue > 0.01 && priceValue < 50000) {
+              const baseScore = this.calculatePriceElementScore(element);
+              const visualScore = this.calculateVisualPriorityScore(element);
+              const totalScore = baseScore + visualScore;
+              
+              if (totalScore > bestScore) {
+                bestPrice = priceValue;
+                bestPriceElement = element;
+                bestScore = totalScore;
+              }
             }
           }
         }
       }
-      
-      if (bestPrice > 0) break;
     }
 
     if (!bestPriceElement || bestPrice === 0) return null;
@@ -441,6 +863,146 @@ export class ProductDetector {
     }
 
     return score;
+  }
+
+  private calculateVisualPriorityScore(element: Element): number {
+    let score = 0;
+    
+    try {
+      const rect = element.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // PRIORITY 1: Is element currently visible in viewport?
+      const isInViewport = (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= viewportHeight &&
+        rect.right <= viewportWidth
+      );
+      
+      if (isInViewport) {
+        score += 50; // High priority for visible elements
+        
+        // BONUS: Elements in upper portion of viewport get extra points
+        const topPortionBonus = Math.max(0, 20 - (rect.top / viewportHeight) * 20);
+        score += topPortionBonus;
+      }
+      
+      // PRIORITY 2: Vertical position (higher = better score)
+      const documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+      );
+      
+      // Calculate position from top as percentage
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const elementTop = rect.top + scrollTop;
+      const positionPercent = elementTop / documentHeight;
+      
+      // Top 25% of page gets maximum points, then decreases
+      if (positionPercent < 0.25) {
+        score += 30; // Top quarter
+      } else if (positionPercent < 0.5) {
+        score += 20; // Second quarter
+      } else if (positionPercent < 0.75) {
+        score += 10; // Third quarter
+      }
+      // Bottom quarter gets no bonus (may be related products)
+      
+      // PRIORITY 3: Size and prominence
+      const elementArea = rect.width * rect.height;
+      if (elementArea > 1000) {
+        score += 5; // Larger elements likely more important
+      }
+      
+      // PRIORITY 4: Exclude likely related/recommended sections
+      const element_parent = element.closest('[class*="recommend"], [class*="related"], [class*="similar"], [class*="also"], [class*="suggestion"], [id*="recommend"], [id*="related"]');
+      if (element_parent) {
+        score -= 25; // Penalize elements in related product sections
+      }
+      
+      // PRIORITY 5: Boost main content areas
+      const mainContent = element.closest('main, [role="main"], #main, .main, #content, .content, [class*="product-detail"], [class*="item-detail"]');
+      if (mainContent) {
+        score += 15; // Boost elements in main content areas
+      }
+      
+      // PRIORITY 6: Penalize footer/bottom sections  
+      const footerElement = element.closest('footer, [class*="footer"], [id*="footer"]');
+      if (footerElement) {
+        score -= 20; // Penalize footer elements
+      }
+      
+    } catch (error) {
+      // If any error in calculation, return neutral score
+      console.debug('Visual priority calculation error:', error);
+      return 0;
+    }
+    
+    return Math.max(0, score); // Ensure non-negative score
+  }
+
+  private extractExactPrice(text: string): number {
+    if (!text) return 0;
+    
+    // Comprehensive price patterns prioritizing exact cents
+    const pricePatterns = [
+      // PRIORITY 1: Exact prices with cents (most preferred)
+      /\$\s*([0-9,]+\.[0-9]{2})\b/g,                    // $123.45
+      /USD\s*\$?\s*([0-9,]+\.[0-9]{2})\b/g,             // USD $123.45 or USD 123.45
+      /([0-9,]+\.[0-9]{2})\s*USD\b/g,                   // 123.45 USD
+      /Price[:\s]*\$?\s*([0-9,]+\.[0-9]{2})\b/gi,       // Price: $123.45
+      /Cost[:\s]*\$?\s*([0-9,]+\.[0-9]{2})\b/gi,        // Cost: $123.45
+      
+      // PRIORITY 2: Prices with one decimal (convert to .X0)
+      /\$\s*([0-9,]+\.[0-9]{1})\b/g,                    // $123.4 → $123.40
+      
+      // PRIORITY 3: Whole dollar amounts (convert to .00)
+      /\$\s*([0-9,]+)\b/g,                              // $123 → $123.00
+      /USD\s*\$?\s*([0-9,]+)\b/g,                       // USD 123 → $123.00
+      /([0-9,]+)\s*USD\b/g,                             // 123 USD → $123.00
+      /Price[:\s]*\$?\s*([0-9,]+)\b/gi,                 // Price: 123 → $123.00
+      /Cost[:\s]*\$?\s*([0-9,]+)\b/gi,                  // Cost: 123 → $123.00
+    ];
+    
+    for (const pattern of pricePatterns) {
+      const matches = Array.from(text.matchAll(pattern));
+      
+      for (const match of matches) {
+        const cleanPrice = match[1].replace(/,/g, ''); // Remove commas
+        let price = parseFloat(cleanPrice);
+        
+        if (isNaN(price) || price <= 0) continue;
+        
+        // Handle different decimal cases
+        if (cleanPrice.includes('.')) {
+          const decimalParts = cleanPrice.split('.');
+          const cents = decimalParts[1];
+          
+          if (cents.length === 1) {
+            // Convert single decimal to two (e.g., 123.4 → 123.40)
+            price = parseFloat(`${decimalParts[0]}.${cents}0`);
+          } else if (cents.length === 2) {
+            // Already has exact cents
+            price = parseFloat(cleanPrice);
+          }
+        } else {
+          // Whole dollar amount - ensure .00
+          price = parseFloat(`${cleanPrice}.00`);
+        }
+        
+        // Validate reasonable price range
+        if (price >= 0.01 && price <= 50000) {
+          return price;
+        }
+      }
+    }
+    
+    return 0; // No valid price found
   }
 
   private findProductTitle(priceElement: Element): string {

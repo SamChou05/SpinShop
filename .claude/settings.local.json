@@ -9,7 +9,9 @@
       "Bash(rm:*)",
       "Bash(npm run lint)",
       "Bash(mv:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }
