@@ -1,0 +1,88 @@
+// ShopSpin Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  street    String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bets Bet[]
+  wins Win[]
+
+  @@map("users")
+}
+
+model Bet {
+  id           String   @id @default(cuid())
+  userId       String?
+  productName  String
+  productPrice Float
+  productCurrency String @default("USD")
+  productUrl   String
+  productImage String?
+  stakeAmount  Float
+  probability  Float
+  won          Boolean
+  betTimestamp DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bets")
+}
+
+model Win {
+  id           String   @id @default(cuid())
+  userId       String
+  productName  String
+  productPrice Float
+  productCurrency String @default("USD")
+  productUrl   String
+  productImage String?
+  stakeAmount  Float
+  probability  Float
+  status       WinStatus @default(PENDING)
+  
+  // Order details (optional)
+  orderNumber     String?
+  trackingNumber  String?
+  estimatedDelivery DateTime?
+  actualDelivery    DateTime?
+  notes           String?
+  
+  winTimestamp DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wins")
+}
+
+enum WinStatus {
+  PENDING
+  PROCESSING
+  ORDERED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}

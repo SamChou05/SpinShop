@@ -1,0 +1,108 @@
+{
+  "users": {
+    "mc9wg43120hlkquitxa": {
+      "name": "Sam Chou",
+      "email": "sam@thechous.com",
+      "address": {
+        "street": "11021 NE 26th PL",
+        "city": "Bellevue",
+        "state": "WA",
+        "zipCode": "98004",
+        "country": "United States"
+      },
+      "phone": "4253657872",
+      "id": "mc9wg43120hlkquitxa",
+      "createdAt": "2025-06-24T02:21:33.229Z",
+      "updatedAt": "2025-06-24T02:21:33.229Z"
+    }
+  },
+  "wins": {
+    "mc9wg4387evrqzuq3sc": {
+      "userId": "mc9wg43120hlkquitxa",
+      "product": {
+        "name": "CE Certified Expandable Prefabricated Home | Storm-Proof 20ft/40ft Modular Design | Energy Efficient Tiny House with Kitchen & Bathroom | 10-Year Warranty | Customizable Options",
+        "price": 6099.36,
+        "currency": "USD",
+        "url": "https://www.amazon.com/Certified-Expandable-Prefabricated-Storm-Proof-Customizable/dp/B0F9ZPLB9B/ref=sr_1_3?crid=2TXGDV9DLGI0J&dib=eyJ2IjoiMSJ9.X2vGnkbkQQ_P1LF1SJ0zrknNA3DcKxgmy6HU2gbnioX4dHyXWcZt5tGx1MGjKmbh7Qn4VvEhBwK46GT3tlvZddxR4Er01ru2xw_iN_XLjupFNxqh3iICquCDUyf2LZdkQwIyxuuwvrw7-ZK9JfzVOchAKpKP188A1AIT0uSvkHSofbqm1SwUnlPFwUYo-g6HIhsebhh53d5DHkTsa-ZK388oVtlRYlCKvsYJZ4MFoVfdXnEl8TQSqsVnvjaOHdZPsA4ZSWJAL97w7HCUxdrHizLZJiH2O0W6F3rGIyFHeao.ZROM_un3_ylRxYW1DThVMXIA_HsdO4x7mULbQu-wnUE&dib_tag=se&keywords=tiny+home&qid=1750633400&sprefix=tiny+hom%2Caps%2C144&sr=8-3",
+        "image": "https://m.media-amazon.com/images/I/71LTJ4XGxqL._AC_SX679_.jpg"
+      },
+      "stakeAmount": 4000,
+      "probability": 0.6558065108470397,
+      "winTimestamp": "2025-06-24T02:21:33.236Z",
+      "status": "pending",
+      "id": "mc9wg4387evrqzuq3sc",
+      "createdAt": "2025-06-24T02:21:33.236Z",
+      "updatedAt": "2025-06-24T02:21:33.236Z"
+    }
+  },
+  "bets": {
+    "mc9wg4351d8t9syw5t5": {
+      "userId": "mc9wg43120hlkquitxa",
+      "product": {
+        "name": "CE Certified Expandable Prefabricated Home | Storm-Proof 20ft/40ft Modular Design | Energy Efficient Tiny House with Kitchen & Bathroom | 10-Year Warranty | Customizable Options",
+        "price": 6099.36,
+        "currency": "USD",
+        "url": "https://www.amazon.com/Certified-Expandable-Prefabricated-Storm-Proof-Customizable/dp/B0F9ZPLB9B/ref=sr_1_3?crid=2TXGDV9DLGI0J&dib=eyJ2IjoiMSJ9.X2vGnkbkQQ_P1LF1SJ0zrknNA3DcKxgmy6HU2gbnioX4dHyXWcZt5tGx1MGjKmbh7Qn4VvEhBwK46GT3tlvZddxR4Er01ru2xw_iN_XLjupFNxqh3iICquCDUyf2LZdkQwIyxuuwvrw7-ZK9JfzVOchAKpKP188A1AIT0uSvkHSofbqm1SwUnlPFwUYo-g6HIhsebhh53d5DHkTsa-ZK388oVtlRYlCKvsYJZ4MFoVfdXnEl8TQSqsVnvjaOHdZPsA4ZSWJAL97w7HCUxdrHizLZJiH2O0W6F3rGIyFHeao.ZROM_un3_ylRxYW1DThVMXIA_HsdO4x7mULbQu-wnUE&dib_tag=se&keywords=tiny+home&qid=1750633400&sprefix=tiny+hom%2Caps%2C144&sr=8-3",
+        "image": "https://m.media-amazon.com/images/I/71LTJ4XGxqL._AC_SX679_.jpg"
+      },
+      "stakeAmount": 4000,
+      "probability": 0.6558065108470397,
+      "won": true,
+      "betTimestamp": "2025-06-24T02:21:33.233Z",
+      "id": "mc9wg4351d8t9syw5t5",
+      "createdAt": "2025-06-24T02:21:33.233Z",
+      "updatedAt": "2025-06-24T02:21:33.233Z"
+    },
+    "mc9wgfl46h4hs2x5cb": {
+      "userId": "mc9wg43120hlkquitxa",
+      "product": {
+        "name": "CE Certified Expandable Prefabricated Home | Storm-Proof 20ft/40ft Modular Design | Energy Efficient Tiny House with Kitchen & Bathroom | 10-Year Warranty | Customizable Options",
+        "price": 6099.36,
+        "currency": "USD",
+        "url": "https://www.amazon.com/Certified-Expandable-Prefabricated-Storm-Proof-Customizable/dp/B0F9ZPLB9B/ref=sr_1_3?crid=2TXGDV9DLGI0J&dib=eyJ2IjoiMSJ9.X2vGnkbkQQ_P1LF1SJ0zrknNA3DcKxgmy6HU2gbnioX4dHyXWcZt5tGx1MGjKmbh7Qn4VvEhBwK46GT3tlvZddxR4Er01ru2xw_iN_XLjupFNxqh3iICquCDUyf2LZdkQwIyxuuwvrw7-ZK9JfzVOchAKpKP188A1AIT0uSvkHSofbqm1SwUnlPFwUYo-g6HIhsebhh53d5DHkTsa-ZK388oVtlRYlCKvsYJZ4MFoVfdXnEl8TQSqsVnvjaOHdZPsA4ZSWJAL97w7HCUxdrHizLZJiH2O0W6F3rGIyFHeao.ZROM_un3_ylRxYW1DThVMXIA_HsdO4x7mULbQu-wnUE&dib_tag=se&keywords=tiny+home&qid=1750633400&sprefix=tiny+hom%2Caps%2C144&sr=8-3",
+        "image": "https://m.media-amazon.com/images/I/71LTJ4XGxqL._AC_SX679_.jpg"
+      },
+      "stakeAmount": 200,
+      "probability": 0.032790325542351985,
+      "won": false,
+      "betTimestamp": "2025-06-24T02:21:48.136Z",
+      "id": "mc9wgfl46h4hs2x5cb",
+      "createdAt": "2025-06-24T02:21:48.136Z",
+      "updatedAt": "2025-06-24T02:21:48.136Z"
+    },
+    "mc9wgpw1vadi7hxo8ud": {
+      "userId": "mc9wg43120hlkquitxa",
+      "product": {
+        "name": "CE Certified Expandable Prefabricated Home | Storm-Proof 20ft/40ft Modular Design | Energy Efficient Tiny House with Kitchen & Bathroom | 10-Year Warranty | Customizable Options",
+        "price": 6099.36,
+        "currency": "USD",
+        "url": "https://www.amazon.com/Certified-Expandable-Prefabricated-Storm-Proof-Customizable/dp/B0F9ZPLB9B/ref=sr_1_3?crid=2TXGDV9DLGI0J&dib=eyJ2IjoiMSJ9.X2vGnkbkQQ_P1LF1SJ0zrknNA3DcKxgmy6HU2gbnioX4dHyXWcZt5tGx1MGjKmbh7Qn4VvEhBwK46GT3tlvZddxR4Er01ru2xw_iN_XLjupFNxqh3iICquCDUyf2LZdkQwIyxuuwvrw7-ZK9JfzVOchAKpKP188A1AIT0uSvkHSofbqm1SwUnlPFwUYo-g6HIhsebhh53d5DHkTsa-ZK388oVtlRYlCKvsYJZ4MFoVfdXnEl8TQSqsVnvjaOHdZPsA4ZSWJAL97w7HCUxdrHizLZJiH2O0W6F3rGIyFHeao.ZROM_un3_ylRxYW1DThVMXIA_HsdO4x7mULbQu-wnUE&dib_tag=se&keywords=tiny+home&qid=1750633400&sprefix=tiny+hom%2Caps%2C144&sr=8-3",
+        "image": "https://m.media-amazon.com/images/I/71LTJ4XGxqL._AC_SX679_.jpg"
+      },
+      "stakeAmount": 100,
+      "probability": 0.016395162771175992,
+      "won": false,
+      "betTimestamp": "2025-06-24T02:22:01.489Z",
+      "id": "mc9wgpw1vadi7hxo8ud",
+      "createdAt": "2025-06-24T02:22:01.489Z",
+      "updatedAt": "2025-06-24T02:22:01.489Z"
+    },
+    "mc9x1a019nius4ka8d": {
+      "userId": "mc9wg43120hlkquitxa",
+      "product": {
+        "name": "CE Certified Expandable Prefabricated Home | Storm-Proof 20ft/40ft Modular Design | Energy Efficient Tiny House with Kitchen & Bathroom | 10-Year Warranty | Customizable Options",
+        "price": 6099.36,
+        "currency": "USD",
+        "url": "https://www.amazon.com/Certified-Expandable-Prefabricated-Storm-Proof-Customizable/dp/B0F9ZPLB9B/ref=sr_1_3?crid=2TXGDV9DLGI0J&dib=eyJ2IjoiMSJ9.X2vGnkbkQQ_P1LF1SJ0zrknNA3DcKxgmy6HU2gbnioX4dHyXWcZt5tGx1MGjKmbh7Qn4VvEhBwK46GT3tlvZddxR4Er01ru2xw_iN_XLjupFNxqh3iICquCDUyf2LZdkQwIyxuuwvrw7-ZK9JfzVOchAKpKP188A1AIT0uSvkHSofbqm1SwUnlPFwUYo-g6HIhsebhh53d5DHkTsa-ZK388oVtlRYlCKvsYJZ4MFoVfdXnEl8TQSqsVnvjaOHdZPsA4ZSWJAL97w7HCUxdrHizLZJiH2O0W6F3rGIyFHeao.ZROM_un3_ylRxYW1DThVMXIA_HsdO4x7mULbQu-wnUE&dib_tag=se&keywords=tiny+home&qid=1750633400&sprefix=tiny+hom%2Caps%2C144&sr=8-3",
+        "image": "https://m.media-amazon.com/images/I/71LTJ4XGxqL._AC_SX679_.jpg"
+      },
+      "stakeAmount": 1000,
+      "probability": 0.14755646494058394,
+      "won": false,
+      "betTimestamp": "2025-06-24T02:38:00.673Z",
+      "id": "mc9x1a019nius4ka8d",
+      "createdAt": "2025-06-24T02:38:00.673Z",
+      "updatedAt": "2025-06-24T02:38:00.673Z"
+    }
+  }
+}
