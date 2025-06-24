@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Server Connection</title>
+</head>
+<body>
+    <h1>Testing Server Connection</h1>
+    <div id="results"></div>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        async function testServerConnection() {
+            resultsDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Test 1: Basic connection
+                resultsDiv.innerHTML += '<br>🔍 Testing basic connection...';
+                const statsResponse = await fetch('http://localhost:3000/api/stats');
+                const statsData = await statsResponse.json();
+                resultsDiv.innerHTML += '<br>✅ Stats API working: ' + JSON.stringify(statsData);
+                
+                // Test 2: Create user
+                resultsDiv.innerHTML += '<br>🔍 Testing user creation...';
+                const userResponse = await fetch('http://localhost:3000/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'webtest@example.com',
+                        name: 'Web Test User',
+                        address: {
+                            street: '123 Web Test St',
+                            city: 'Test City',
+                            state: 'CA',
+                            zipCode: '90210',
+                            country: 'United States'
+                        }
+                    })
+                });
+                const userData = await userResponse.json();
+                resultsDiv.innerHTML += '<br>✅ User creation: ' + JSON.stringify(userData);
+                
+                if (userData.success) {
+                    // Test 3: Record win
+                    resultsDiv.innerHTML += '<br>🔍 Testing win recording...';
+                    const winResponse = await fetch('http://localhost:3000/api/wins', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: userData.data.id,
+                            product: {
+                                name: 'Web Test iPhone',
+                                price: 999.99,
+                                currency: 'USD',
+                                url: window.location.href
+                            },
+                            stakeAmount: 50.00,
+                            probability: 0.5
+                        })
+                    });
+                    const winData = await winResponse.json();
+                    resultsDiv.innerHTML += '<br>✅ Win recording: ' + JSON.stringify(winData);
+                    
+                    // Test 4: Check updated stats
+                    resultsDiv.innerHTML += '<br>🔍 Checking updated stats...';
+                    const newStatsResponse = await fetch('http://localhost:3000/api/stats');
+                    const newStatsData = await newStatsResponse.json();
+                    resultsDiv.innerHTML += '<br>✅ Updated stats: ' + JSON.stringify(newStatsData);
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML += '<br>❌ Error: ' + error.message;
+            }
+        }
+        
+        // Run test on page load
+        testServerConnection();
+    </script>
+</body>
+</html>

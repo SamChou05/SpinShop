@@ -1,5 +1,4 @@
 import { ProductDetector, ProductInfo, PageContext } from './productDetector';
-import { UserRegistrationModal } from './userRegistration';
 
 class ContentScript {
   private detector = new ProductDetector();
@@ -250,8 +249,7 @@ class ContentScript {
       '.shopspin-value-tooltip',
       '.shopspin-urgent-cta',
       '#shopspin-floating-promo',
-      '#shopspin-overlay',
-      '#shopspin-address-confirmation'
+      '#shopspin-overlay'
     ];
     
     selectors.forEach(selector => {
@@ -350,7 +348,7 @@ class ContentScript {
         </div>
         <div class="controls">
           <input type="number" class="stake-input" id="stake-input" 
-                 placeholder="Your stake ($)" min="0.01" max="${Math.min(product.price, 10000)}" step="0.01">
+                 placeholder="Your stake ($)" min="0.01" max="${product.price}" step="0.01">
           <div class="probability">
             <div class="prob-text">Win Probability</div>
             <div class="prob-value" id="probability">0%</div>
@@ -370,15 +368,10 @@ class ContentScript {
 
     stakeInput.addEventListener('input', () => {
       const stake = parseFloat(stakeInput.value) || 0;
-      // Apply house edge to display probability (same as backend)
-      const rawProbability = stake / product.price;
-      const HOUSE_EDGE_MULTIPLIER = 0.97; // 3% house edge (97% of original odds)
-      const MAX_WIN_PROBABILITY = 0.97; // Maximum 97% win chance
-      const probability = Math.min(rawProbability * HOUSE_EDGE_MULTIPLIER, MAX_WIN_PROBABILITY) * 100;
-      
+      const probability = Math.min((stake / product.price) * 100, 100);
       probabilityElement.textContent = `${probability.toFixed(1)}%`;
       
-      spinBtn.disabled = stake <= 0 || stake > product.price || stake > 10000;
+      spinBtn.disabled = stake <= 0 || stake > product.price;
       spinBtn.textContent = stake > 0 ? '🎲 Spin to Win!' : 'Enter Stake First';
     });
 
@@ -411,46 +404,13 @@ class ContentScript {
     });
   }
 
-  private handleSpinResult(result: { won: boolean; message: string; requiresUserInfo?: boolean; requiresAddressConfirmation?: boolean; existingUser?: any }) {
+  private handleSpinResult(result: { won: boolean; message: string }) {
     const overlay = document.getElementById('shopspin-overlay');
     if (!overlay?.shadowRoot) return;
 
     const container = overlay.shadowRoot.querySelector('.container') as HTMLElement;
     
     if (result.won) {
-      if (result.requiresUserInfo) {
-        // Remove overlay and show user registration modal
-        this.removeOverlay();
-        
-        // Get current product and stake from the context
-        const currentProduct = this.getCurrentProduct();
-        const stakeInput = overlay.shadowRoot?.getElementById('stake-input') as HTMLInputElement;
-        const stake = parseFloat(stakeInput?.value || '0');
-        
-        if (currentProduct) {
-          // Show user registration modal
-          const modal = new UserRegistrationModal(currentProduct, stake);
-          modal.show();
-        }
-        return;
-      }
-      
-      if (result.requiresAddressConfirmation && result.existingUser) {
-        // Remove overlay and show address confirmation modal
-        this.removeOverlay();
-        
-        // Get current product and stake from the context
-        const currentProduct = this.getCurrentProduct();
-        const stakeInput = overlay.shadowRoot?.getElementById('stake-input') as HTMLInputElement;
-        const stake = parseFloat(stakeInput?.value || '0');
-        
-        if (currentProduct) {
-          // Show address confirmation modal
-          this.showAddressConfirmationModal(currentProduct, stake, result.existingUser);
-        }
-        return;
-      }
-      
       container.innerHTML = `
         <div style="text-align: center; padding: 20px;">
           <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
@@ -470,183 +430,6 @@ class ContentScript {
 
     // Auto-close after 3 seconds
     setTimeout(() => this.removeOverlay(), 3000);
-  }
-
-  private getCurrentProduct(): ProductInfo | null {
-    return this.currentContext?.primaryProduct || null;
-  }
-
-  private showAddressConfirmationModal(product: ProductInfo, stake: number, existingUser: any) {
-    console.debug('ShopSpin: Showing address confirmation modal for user:', existingUser.name);
-
-    // Remove existing modal if any
-    this.removeAddressConfirmationModal();
-
-    // Create modal container
-    const modal = document.createElement('div');
-    modal.id = 'shopspin-address-confirmation';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    `;
-
-    const formContainer = document.createElement('div');
-    formContainer.style.cssText = `
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    `;
-
-    formContainer.innerHTML = `
-      <div style="text-align: center; margin-bottom: 25px;">
-        <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
-        <h2 style="margin: 0; color: #1f2937;">Congratulations! You Won!</h2>
-        <p style="margin: 10px 0 0 0; color: #6b7280;">Please confirm your shipping address</p>
-      </div>
-
-      <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 10px 0; color: #1f2937;">Prize: ${product.name}</h3>
-        <p style="margin: 0; color: #6b7280;">Value: $${product.price.toFixed(2)}</p>
-      </div>
-
-      <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #1f2937;">Your Current Shipping Address:</h3>
-        <div style="color: #4b5563; line-height: 1.5;">
-          <strong>${existingUser.name}</strong><br>
-          ${existingUser.email}<br><br>
-          ${existingUser.address?.street || 'Address not available'}<br>
-          ${existingUser.address?.city || ''}, ${existingUser.address?.state || ''} ${existingUser.address?.zipCode || ''}<br>
-          ${existingUser.address?.country || ''}
-          ${existingUser.phone ? `<br><br>Phone: ${existingUser.phone}` : ''}
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <button id="confirm-address" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-          ✓ Ship to This Address
-        </button>
-        <button id="update-address" style="flex: 1; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-          📝 Update Address
-        </button>
-      </div>
-
-      <div style="text-align: center;">
-        <button id="cancel-confirmation" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          Cancel
-        </button>
-      </div>
-
-      <div id="loading-confirmation" style="display: none; text-align: center; padding: 20px;">
-        <div style="font-size: 24px; margin-bottom: 10px;">⏳</div>
-        <div>Recording your win...</div>
-      </div>
-
-      <div id="success-confirmation" style="display: none; text-align: center; padding: 20px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
-        <h3 style="margin: 0 0 10px 0; color: #059669;">Win Recorded Successfully!</h3>
-        <p style="margin: 0; color: #6b7280;">We'll contact you soon about shipping details.</p>
-      </div>
-
-      <div id="error-confirmation" style="display: none; text-align: center; padding: 20px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
-        <h3 style="margin: 0 0 10px 0; color: #dc2626;">Error</h3>
-        <p id="error-message-confirmation" style="margin: 0; color: #6b7280;"></p>
-      </div>
-    `;
-
-    modal.appendChild(formContainer);
-    document.body.appendChild(modal);
-
-    // Add event listeners
-    const confirmBtn = modal.querySelector('#confirm-address') as HTMLButtonElement;
-    const updateBtn = modal.querySelector('#update-address') as HTMLButtonElement;
-    const cancelBtn = modal.querySelector('#cancel-confirmation') as HTMLButtonElement;
-
-    confirmBtn.addEventListener('click', () => {
-      this.confirmExistingAddress(product, stake, existingUser);
-    });
-
-    updateBtn.addEventListener('click', () => {
-      this.removeAddressConfirmationModal();
-      // Show the full registration modal to update address
-      const modal = new UserRegistrationModal(product, stake);
-      modal.show();
-    });
-
-    cancelBtn.addEventListener('click', () => {
-      this.removeAddressConfirmationModal();
-    });
-
-    // Escape key to close
-    const escapeHandler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        this.removeAddressConfirmationModal();
-        document.removeEventListener('keydown', escapeHandler);
-      }
-    };
-    document.addEventListener('keydown', escapeHandler);
-  }
-
-  private removeAddressConfirmationModal() {
-    const existing = document.getElementById('shopspin-address-confirmation');
-    if (existing) {
-      existing.remove();
-    }
-  }
-
-  private async confirmExistingAddress(product: ProductInfo, stake: number, existingUser: any) {
-    const modal = document.getElementById('shopspin-address-confirmation');
-    if (!modal) return;
-
-    const formContainer = modal.querySelector('div') as HTMLElement;
-    const loadingDiv = modal.querySelector('#loading-confirmation') as HTMLElement;
-    const successDiv = modal.querySelector('#success-confirmation') as HTMLElement;
-    const errorDiv = modal.querySelector('#error-confirmation') as HTMLElement;
-    const errorMessage = modal.querySelector('#error-message-confirmation') as HTMLElement;
-
-    // Hide form and show loading
-    formContainer.style.display = 'none';
-    loadingDiv.style.display = 'block';
-
-    try {
-      const response = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          type: 'CONFIRM_EXISTING_ADDRESS',
-          product,
-          stake,
-          userInfo: existingUser
-        }, resolve);
-      });
-
-      loadingDiv.style.display = 'none';
-
-      if ((response as any).won) {
-        successDiv.style.display = 'block';
-        setTimeout(() => this.removeAddressConfirmationModal(), 3000);
-      } else {
-        errorDiv.style.display = 'block';
-        errorMessage.textContent = (response as any).message || 'Unknown error occurred';
-      }
-
-    } catch (error) {
-      loadingDiv.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorMessage.textContent = 'Network error. Please try again.';
-    }
   }
 
   private debounce(func: () => void, wait: number) {

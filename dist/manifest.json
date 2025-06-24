@@ -9,6 +9,9 @@
   ],
   "host_permissions": [
     "https://api.stripe.com/*",
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://localhost:3002/*",
     "https://*/*",
     "http://*/*"
   ],
@@ -33,6 +36,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.stripe.com;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.stripe.com http://localhost:3000 http://localhost:3001 http://localhost:3002;"
   }
 }

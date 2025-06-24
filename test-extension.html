@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ShopSpin Extension</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .status { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>ShopSpin Extension Test Page</h1>
+    
+    <div class="status">
+        <h3>Server Status</h3>
+        <div id="server-status">Checking...</div>
+        <button class="test-button" onclick="checkServer()">Test Server Connection</button>
+    </div>
+
+    <div class="status">
+        <h3>Extension Status</h3>
+        <div id="extension-status">Checking...</div>
+        <button class="test-button" onclick="testExtension()">Test Extension Loaded</button>
+    </div>
+
+    <div class="status">
+        <h3>Win Simulation</h3>
+        <div id="win-status">Ready to test</div>
+        <button class="test-button" onclick="simulateWin()">Simulate Win (Force User Registration)</button>
+    </div>
+
+    <!-- Fake product data for testing -->
+    <div style="display: none;">
+        <div id="productTitle">Test iPhone 15 Pro</div>
+        <span class="a-price">
+            <span class="a-offscreen">$999.99</span>
+            <span class="a-price-whole">999</span>
+            <span class="a-price-fraction">99</span>
+        </span>
+    </div>
+
+    <script>
+        // Check server connection
+        async function checkServer() {
+            const statusDiv = document.getElementById('server-status');
+            try {
+                const response = await fetch('http://localhost:3000/api/stats');
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.innerHTML = `✅ Server running! Users: ${data.data.totalUsers}, Wins: ${data.data.totalWins}`;
+                    statusDiv.style.background = '#d4edda';
+                } else {
+                    statusDiv.innerHTML = '❌ Server error: ' + data.error;
+                    statusDiv.style.background = '#f8d7da';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '❌ Server not reachable. Make sure to run: cd shopspin-server && npm run dev';
+                statusDiv.style.background = '#f8d7da';
+            }
+        }
+
+        // Check extension
+        function testExtension() {
+            const statusDiv = document.getElementById('extension-status');
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                statusDiv.innerHTML = '✅ Extension loaded!';
+                statusDiv.style.background = '#d4edda';
+            } else {
+                statusDiv.innerHTML = '❌ Extension not loaded. Load it in chrome://extensions/';
+                statusDiv.style.background = '#f8d7da';
+            }
+        }
+
+        // Simulate a win to test registration flow
+        function simulateWin() {
+            const statusDiv = document.getElementById('win-status');
+            
+            if (typeof chrome === 'undefined' || !chrome.runtime) {
+                statusDiv.innerHTML = '❌ Extension not loaded';
+                return;
+            }
+
+            // Simulate a win message that should trigger user registration
+            const testProduct = {
+                name: 'Test iPhone 15 Pro',
+                price: 999.99,
+                currency: 'USD',
+                url: window.location.href
+            };
+
+            const testStake = 50.00;
+
+            // Send message to background script
+            chrome.runtime.sendMessage({
+                type: 'ENTER_SPIN',
+                product: testProduct,
+                stake: testStake
+            }, (response) => {
+                console.log('Spin response:', response);
+                if (response.requiresUserInfo) {
+                    statusDiv.innerHTML = '✅ Win triggered! Should show registration form.';
+                    statusDiv.style.background = '#d4edda';
+                } else if (response.won) {
+                    statusDiv.innerHTML = '✅ Win recorded to server!';
+                    statusDiv.style.background = '#d4edda';
+                } else {
+                    statusDiv.innerHTML = '❌ Lost the spin. Try again!';
+                    statusDiv.style.background = '#fff3cd';
+                }
+            });
+        }
+
+        // Auto-check on load
+        window.onload = function() {
+            checkServer();
+            testExtension();
+        };
+    </script>
+</body>
+</html>

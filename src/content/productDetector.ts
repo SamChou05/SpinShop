@@ -294,7 +294,7 @@ export class ProductDetector {
       
       for (const [index, item] of listingItems.entries()) {
         if (index < 5) { // Only debug first 5 items to avoid spam
-          console.log('🎰 ShopSpin: Processing item', index, 'classes:', item.className);
+          console.log('🎰 ShopSpin: Processing item', index, 'classes:', (item as Element).className);
         }
         
         // Try multiple title selectors for different layouts
@@ -793,7 +793,7 @@ export class ProductDetector {
         if (!element.textContent) continue;
         
         // Skip elements that are likely not the main price
-        const className = element.className.toLowerCase();
+        const className = (element as HTMLElement).className?.toLowerCase() || '';
         if (className.includes('compare') || className.includes('original') || 
             className.includes('msrp') || className.includes('strike')) {
           continue;
@@ -951,7 +951,7 @@ export class ProductDetector {
         if (!element.textContent) continue;
         
         const tagName = element.tagName.toLowerCase();
-        const className = element.className.toLowerCase();
+        const className = (element as HTMLElement).className?.toLowerCase() || '';
         
         // Skip non-content elements
         if (tagName === 'nav' || tagName === 'footer' || 
@@ -1002,8 +1002,8 @@ export class ProductDetector {
 
   private calculatePriceElementScore(element: Element): number {
     let score = 0;
-    const className = element.className.toLowerCase();
-    const id = element.id.toLowerCase();
+    const className = (element as HTMLElement).className?.toLowerCase() || '';
+    const id = (element as HTMLElement).id?.toLowerCase() || '';
     // const textContent = element.textContent?.toLowerCase() || '';
 
     // Positive indicators

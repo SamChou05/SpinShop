@@ -11,7 +11,16 @@
       "Bash(mv:*)",
       "Bash(cp:*)",
       "Bash(grep:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(sed:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma dev:*)",
+      "Bash(npx prisma:*)"
     ],
     "deny": []
   }
