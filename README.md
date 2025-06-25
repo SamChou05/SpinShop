@@ -4,12 +4,12 @@ A Manifest v3 Chrome extension that turns shopping into a game by allowing users
 
 ## Features
 
-- 🎯 **Product Detection**: Automatically detects products on shopping sites using JSON-LD, OpenGraph, and text scraping
-- 🎲 **Sweepstakes Gameplay**: Stake any amount up to the product price with winning probability = stake/price
-- 🔒 **Secure RNG**: Uses cryptographically secure random number generation
-- 💳 **Stripe Integration**: Secure payment processing for discounted wins
-- ⚙️ **Customizable**: Toggle sounds, animations, and extension on/off
-- 📊 **Statistics**: Track your wins, losses, and total savings
+- **Product Detection**: Automatically detects products on shopping sites using JSON-LD, OpenGraph, and text scraping
+- **Sweepstakes Gameplay**: Stake any amount up to the product price with winning probability = stake/price
+- **Secure RNG**: Uses cryptographically secure random number generation
+- **Stripe Integration**: Secure payment processing for discounted wins
+- **Customizable**: Toggle sounds, animations, and extension on/off
+- **Statistics**: Track your wins, losses, and total savings
 
 ## Tech Stack
 
