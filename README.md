@@ -119,38 +119,3 @@ npm run typecheck
 1. **JSON-LD Structured Data**: Highest priority, most reliable
 2. **OpenGraph Meta Tags**: Fallback for sites without JSON-LD
 3. **Text Scraping**: Last resort using regex and heuristics
-
-## Security & Compliance
-
-- ✅ Cryptographically secure RNG (crypto.getRandomValues)
-- ✅ No card details stored in extension
-- ✅ Stripe-compliant payment processing
-- ✅ Shadow DOM for style isolation
-- ⚠️ **Legal Notice**: Verify sweepstakes legality in your jurisdiction
-
-## Browser Support
-
-- Chrome 88+ (Manifest v3 support)
-- Edge 88+ (Chromium-based)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Disclaimer
-
-This extension is for educational and entertainment purposes. Users should:
-- Verify local laws regarding sweepstakes and gambling
-- Only stake amounts they can afford to lose
-- Understand that this is a game of chance, not guaranteed savings
-
-The developers are not responsible for financial losses or legal issues arising from use of this extension.
