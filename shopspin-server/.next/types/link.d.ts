@@ -29,15 +29,15 @@ declare namespace __next_route_internal_types__ {
     S extends `${string}${SearchOrHash}` ? never : S
 
   type StaticRoutes = 
-    | `/`
-    | `/admin`
     | `/api/auth/check`
     | `/api/auth/login`
     | `/api/bets`
-    | `/api/reset`
     | `/api/stats`
+    | `/api/reset`
     | `/api/users`
     | `/api/wins`
+    | `/admin`
+    | `/`
   type DynamicRoutes<T extends string = string> = 
     | `/api/users/${SafeSlug<T>}`
     | `/api/wins/${SafeSlug<T>}`

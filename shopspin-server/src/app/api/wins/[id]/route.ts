@@ -4,10 +4,10 @@ import { UpdateWinStatusRequest, ApiResponse, Win } from '@/lib/types';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ApiResponse<Win>>> {
   try {
-    const { id } = params;
+    const { id } = await params;
     const updateData: Partial<UpdateWinStatusRequest> = await request.json();
 
     // Get existing win
@@ -54,10 +54,10 @@ export async function PATCH(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ApiResponse<Win>>> {
   try {
-    const { id } = params;
+    const { id } = await params;
     const win = await prismaDb.getWinById(id);
 
     if (!win) {
