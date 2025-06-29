@@ -1,14 +1,14 @@
 {
-  "/api/auth/check/route": "/api/auth/check",
-  "/_not-found/page": "/_not-found",
   "/api/auth/login/route": "/api/auth/login",
+  "/api/auth/check/route": "/api/auth/check",
   "/api/bets/route": "/api/bets",
-  "/api/stats/route": "/api/stats",
   "/api/reset/route": "/api/reset",
   "/api/users/[id]/route": "/api/users/[id]",
   "/api/users/route": "/api/users",
   "/api/wins/[id]/route": "/api/wins/[id]",
+  "/api/stats/route": "/api/stats",
   "/api/wins/route": "/api/wins",
+  "/_not-found/page": "/_not-found",
   "/admin/page": "/admin",
   "/page": "/"
 }

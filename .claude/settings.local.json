@@ -25,7 +25,11 @@
       "Bash(nslookup:*)",
       "Bash(node:*)",
       "Bash(timeout:*)",
-      "Bash(PRISMA_DIRECT_URL=true npx prisma db push)"
+      "Bash(PRISMA_DIRECT_URL=true npx prisma db push)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
