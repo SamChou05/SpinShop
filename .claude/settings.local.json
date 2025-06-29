@@ -20,7 +20,12 @@
       "Bash(pkill:*)",
       "Bash(npx prisma migrate dev:*)",
       "Bash(npx prisma dev:*)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(ping:*)",
+      "Bash(nslookup:*)",
+      "Bash(node:*)",
+      "Bash(timeout:*)",
+      "Bash(PRISMA_DIRECT_URL=true npx prisma db push)"
     ],
     "deny": []
   }
