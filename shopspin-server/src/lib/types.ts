@@ -30,6 +30,7 @@ export interface Bet {
   probability: number;
   won: boolean;
   betTimestamp: Date;
+  paymentIntentId?: string;
   createdAt: Date;
   updatedAt: Date;
 }

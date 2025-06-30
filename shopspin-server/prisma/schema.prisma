@@ -40,6 +40,7 @@ model Bet {
   probability  Float
   won          Boolean
   betTimestamp DateTime @default(now())
+  paymentIntentId String? // Stripe payment intent ID
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -1,12 +1,18 @@
 // Server configuration for ShopSpin extension
 export const SERVER_CONFIG = {
-  // Use localhost for development, will need to be updated for production
-  BASE_URL: 'http://localhost:3001',
+  // Environment-based URL configuration
+  BASE_URL: process.env.NODE_ENV === 'production' 
+    ? 'https://your-shopspin-app.vercel.app'  // Replace with your actual Vercel URL
+    : 'http://localhost:3000',
   API_ENDPOINTS: {
     USERS: '/api/users',
     WINS: '/api/wins',
     BETS: '/api/bets',
-    STATS: '/api/stats'
+    STATS: '/api/stats',
+    PAYMENTS: {
+      CREATE_INTENT: '/api/payments/create-intent',
+      WEBHOOKS: '/api/payments/webhooks'
+    }
   }
 };
 
@@ -106,5 +112,27 @@ export class ShopSpinAPI {
       body: JSON.stringify(winData),
     });
     return response.json();
+  }
+
+  static async createPaymentIntent(paymentData: {
+    userId: string;
+    stakeAmount: number;
+    productPrice: number;
+    productName: string;
+    productUrl: string;
+  }) {
+    const response = await fetch(`${this.baseUrl}${SERVER_CONFIG.API_ENDPOINTS.PAYMENTS.CREATE_INTENT}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(paymentData),
+    });
+    return response.json();
+  }
+
+  // Set base URL for environment switching
+  static setBaseUrl(url: string) {
+    this.baseUrl = url;
   }
 }

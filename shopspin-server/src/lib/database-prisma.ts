@@ -78,6 +78,7 @@ export class PrismaDatabase {
         probability: betData.probability,
         won: betData.won,
         betTimestamp: betData.betTimestamp,
+        paymentIntentId: betData.paymentIntentId,
       },
     });
 
@@ -268,6 +269,7 @@ export class PrismaDatabase {
       probability: bet.probability,
       won: bet.won,
       betTimestamp: bet.betTimestamp,
+      paymentIntentId: bet.paymentIntentId,
       createdAt: bet.createdAt,
       updatedAt: bet.updatedAt,
     };
