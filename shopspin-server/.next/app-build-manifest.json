@@ -1,95 +1,9 @@
 {
   "pages": {
-    "/_not-found/page": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/_not-found/page-5bfe245ad955586d.js"
-    ],
-    "/api/auth/login/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/auth/login/route-42dba93cca15e37b.js"
-    ],
-    "/api/auth/check/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/auth/check/route-b3b187decebe4d11.js"
-    ],
-    "/api/bets/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/bets/route-dc32cb704d2d3c67.js"
-    ],
-    "/api/reset/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/reset/route-27f6d198dc3d8940.js"
-    ],
-    "/api/users/[id]/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/users/[id]/route-625a0a0b1af10672.js"
-    ],
-    "/api/users/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/users/route-2fff37c0ef443ce6.js"
-    ],
-    "/api/wins/[id]/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/wins/[id]/route-61ba03715dff2a85.js"
-    ],
-    "/api/stats/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/stats/route-8491213a930418e3.js"
-    ],
-    "/api/wins/route": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/api/wins/route-683102e605e5cc31.js"
-    ],
-    "/layout": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/layout-6a25cf60eb106125.js"
-    ],
-    "/admin/page": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/admin/page-98ad7c4f22361f18.js"
-    ],
-    "/page": [
-      "static/chunks/webpack-0a4086f017cb2d84.js",
-      "static/chunks/4bd1b696-644ea561b464f52b.js",
-      "static/chunks/684-0e83bdb815b97be2.js",
-      "static/chunks/main-app-89c509405a93b36e.js",
-      "static/chunks/app/page-5cc4828f229dc710.js"
+    "/api/payments/create-intent/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/payments/create-intent/route.js"
     ]
   }
 }

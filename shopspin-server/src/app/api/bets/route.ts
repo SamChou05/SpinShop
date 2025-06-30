@@ -3,6 +3,7 @@ import { prismaDb } from '../../../lib/database-prisma';
 import { ApiResponse, RecordBetRequest } from '../../../lib/types';
 import { validateStakeAmount, validateProduct, validateProbability, ValidationError } from '../../../lib/validation';
 import { betRateLimiter, getClientIP } from '../../../lib/rateLimit';
+import { stripeService } from '../../../lib/stripe';
 
 // Record a new bet (win or loss)
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 429 });
     }
 
-    const betData: RecordBetRequest = await request.json();
+    const betData: RecordBetRequest & { paymentIntentId: string } = await request.json();
     console.log('🎰 SERVER: Bet recording request received');
     console.log('🎰 SERVER: Bet data:', {
       userId: betData.userId,
@@ -42,6 +43,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       if (typeof betData.won !== 'boolean') {
         throw new ValidationError('Won status must be a boolean');
       }
+
+      if (!betData.paymentIntentId || typeof betData.paymentIntentId !== 'string') {
+        throw new ValidationError('Payment intent ID is required');
+      }
     } catch (error) {
       if (error instanceof ValidationError) {
         return NextResponse.json({
@@ -61,6 +66,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 404 });
     }
 
+    // Verify payment was successful
+    try {
+      const paymentIntent = await stripeService.getPaymentIntent(betData.paymentIntentId);
+      if (paymentIntent.status !== 'succeeded') {
+        return NextResponse.json({
+          success: false,
+          error: 'Payment not completed'
+        }, { status: 400 });
+      }
+      
+      // Verify payment amount matches stake
+      if (paymentIntent.amount !== Math.round(betData.stakeAmount * 100)) {
+        return NextResponse.json({
+          success: false,
+          error: 'Payment amount does not match stake'
+        }, { status: 400 });
+      }
+    } catch (error) {
+      console.error('Payment verification failed:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Payment verification failed'
+      }, { status: 400 });
+    }
+
     // Create bet record
     const bet = await prismaDb.createBet({
       userId: betData.userId,
@@ -68,7 +98,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       stakeAmount: betData.stakeAmount,
       probability: betData.probability,
       won: betData.won,
-      betTimestamp: new Date()
+      betTimestamp: new Date(),
+      paymentIntentId: betData.paymentIntentId
     });
 
     const resultText = betData.won ? 'WIN' : 'LOSS';

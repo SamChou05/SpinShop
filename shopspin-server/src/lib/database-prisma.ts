@@ -200,7 +200,12 @@ export class PrismaDatabase {
     ]);
 
     const totalStakesCollected = bets.reduce((sum, bet) => sum + bet.stakeAmount, 0);
-    const totalValuePaidOut = wins.reduce((sum, win) => sum + win.productPrice, 0);
+    
+    // Calculate total value paid out from winning bets (product price for each win)
+    const totalValuePaidOut = bets
+      .filter(bet => bet.won)
+      .reduce((sum, bet) => sum + bet.productPrice, 0);
+    
     const profitLoss = totalStakesCollected - totalValuePaidOut;
     
     const totalBets = bets.length;

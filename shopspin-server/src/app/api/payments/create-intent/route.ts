@@ -5,11 +5,7 @@ import { ApiResponse } from '../../../../lib/types';
 import { validateStakeAmount, ValidationError } from '../../../../lib/validation';
 
 export interface CreatePaymentIntentRequest {
-  userId: string;
-  stakeAmount: number;
-  productPrice: number;
-  productName: string;
-  productUrl: string;
+  amount: number;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
@@ -21,14 +17,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 500 });
     }
 
-    const { userId, stakeAmount, productPrice, productName, productUrl }: CreatePaymentIntentRequest = await request.json();
+    const { amount }: CreatePaymentIntentRequest = await request.json();
 
     // Validate input
     try {
-      if (!userId || typeof userId !== 'string') {
-        throw new ValidationError('User ID is required');
+      if (typeof amount !== 'number' || amount <= 0) {
+        throw new ValidationError('Valid amount is required');
       }
-      validateStakeAmount(stakeAmount, productPrice);
+      if (amount < 0.01) {
+        throw new ValidationError('Minimum amount is $0.01');
+      }
+      if (amount > 10000) {
+        throw new ValidationError('Maximum amount is $10,000');
+      }
     } catch (error) {
       if (error instanceof ValidationError) {
         return NextResponse.json({
@@ -39,37 +40,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       throw error;
     }
 
-    // Verify user exists
-    const user = await prismaDb.getUserById(userId);
-    if (!user) {
-      return NextResponse.json({
-        success: false,
-        error: 'User not found'
-      }, { status: 404 });
-    }
-
     // Create payment intent
     const paymentIntent = await StripeService.createPaymentIntent({
-      amount: Math.round(stakeAmount * 100), // Convert to cents
+      amount: Math.round(amount * 100), // Convert to cents
       currency: 'usd',
       metadata: {
-        userId,
-        productName,
-        productUrl,
-        productPrice: productPrice.toString(),
-        stakeAmount: stakeAmount.toString(),
-        userEmail: user.email,
+        stakeAmount: amount.toString(),
       }
     });
 
-    console.log(`💳 PAYMENT INTENT CREATED: $${stakeAmount} for ${user.email} on ${productName}`);
+    console.log(`💳 PAYMENT INTENT CREATED: $${amount}`);
 
     return NextResponse.json({
       success: true,
-      data: {
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
-      }
+      paymentIntentId: paymentIntent.id,
+      clientSecret: paymentIntent.client_secret,
     });
 
   } catch (error) {

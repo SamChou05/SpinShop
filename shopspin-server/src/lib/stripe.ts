@@ -24,9 +24,7 @@ export class StripeService {
       amount: params.amount,
       currency: params.currency,
       metadata: params.metadata || {},
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      payment_method_types: ['card'],
     });
   }
 
@@ -83,4 +81,5 @@ export class StripeService {
 }
 
 export { stripe };
+export const stripeService = StripeService;
 export default StripeService;
